@@ -43,10 +43,20 @@ export function updateProject(data) {
   })
 }
 
-// 删除护理项目
-export function delProject(id) {
+// 修改护理项目状态（启用/禁用）
+export function changeProjectStatus(id, status) {
   return request({
-    url: '/nursing/project/' + id,
+    url: '/nursing/project/changeStatus',
+    method: 'put',
+    data: { id, status }
+  })
+}
+
+// 删除护理项目（支持单个ID或ID数组）
+export function delProject(id) {
+  const ids = Array.isArray(id) ? id.join(',') : id
+  return request({
+    url: '/nursing/project/' + ids,
     method: 'delete'
   })
 }

@@ -43,10 +43,20 @@ export function updatePlan(data) {
   })
 }
 
-// 删除护理计划
-export function delPlan(id) {
+// 修改护理计划状态（启用/禁用）
+export function changePlanStatus(id, status) {
   return request({
-    url: '/nursing/plan/' + id,
+    url: '/nursing/plan/changeStatus',
+    method: 'put',
+    data: { id, status }
+  })
+}
+
+// 删除护理计划（支持单个ID或ID数组）
+export function delPlan(id) {
+  const ids = Array.isArray(id) ? id.join(',') : id
+  return request({
+    url: '/nursing/plan/' + ids,
     method: 'delete'
   })
 }

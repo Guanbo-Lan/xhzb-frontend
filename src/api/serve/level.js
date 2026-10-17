@@ -43,10 +43,20 @@ export function updateLevel(data) {
   })
 }
 
-// 删除护理等级
-export function delLevel(id) {
+// 修改护理等级状态（启用/禁用）
+export function changeLevelStatus(id, status) {
   return request({
-    url: '/nursing/level/' + id,
+    url: '/nursing/level/changeStatus',
+    method: 'put',
+    data: { id, status }
+  })
+}
+
+// 删除护理等级（支持单个ID或ID数组）
+export function delLevel(id) {
+  const ids = Array.isArray(id) ? id.join(',') : id
+  return request({
+    url: '/nursing/level/' + ids,
     method: 'delete'
   })
 }

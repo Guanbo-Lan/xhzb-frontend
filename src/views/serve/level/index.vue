@@ -1,17 +1,17 @@
 <template>
    <div class="app-container">
       <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch">
-         <el-form-item label="护理等级名称" prop="name">
+         <el-form-item label="等级名称" prop="name">
             <el-input
                v-model="queryParams.name"
-               placeholder="请输入护理等级名称"
+               placeholder="请输入"
                clearable
                style="width: 200px"
                @keyup.enter="handleQuery"
             />
          </el-form-item>
          <el-form-item label="状态" prop="status">
-            <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 200px">
+            <el-select v-model="queryParams.status" placeholder="请选择" clearable style="width: 200px">
                <el-option
                   v-for="dict in nursing_level_status"
                   :key="dict.value"
@@ -21,55 +21,35 @@
             </el-select>
          </el-form-item>
          <el-form-item>
-            <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+            <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
          </el-form-item>
       </el-form>
 
-      <el-row :gutter="10" class="mb8">
-         <el-col :span="1.5">
-            <el-button
-               type="primary"
-               plain
-               icon="Plus"
-               @click="handleAdd"
-               v-hasPermi="['nursing:level:add']"
-            >新增</el-button>
-         </el-col>
-         <el-col :span="1.5">
-            <el-button
-               type="success"
-               plain
-               icon="Edit"
-               :disabled="single"
-               @click="handleUpdate"
-               v-hasPermi="['nursing:level:edit']"
-            >修改</el-button>
-         </el-col>
-         <el-col :span="1.5">
-            <el-button
-               type="danger"
-               plain
-               icon="Delete"
-               :disabled="multiple"
-               @click="handleDelete"
-               v-hasPermi="['nursing:level:remove']"
-            >删除</el-button>
-         </el-col>
+      <div class="table-toolbar">
          <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
-      </el-row>
+         <el-button
+            type="primary"
+            @click="handleAdd"
+            v-hasPermi="['nursing:level:add']"
+         >新增护理等级</el-button>
+      </div>
 
-      <el-table v-loading="loading" :data="levelList" @selection-change="handleSelectionChange">
-         <el-table-column type="selection" width="55" align="center" />
+      <el-table v-loading="loading" :data="levelList">
+         <el-table-column label="序号" type="index" align="center" width="60" :index="indexMethod" />
          <el-table-column label="护理等级名称" align="center" prop="name" :show-overflow-tooltip="true" />
-         <el-table-column label="护理计划" align="center" prop="nursingPlanName" :show-overflow-tooltip="true" />
-         <el-table-column label="护理费用" align="center" prop="fee" width="120" />
-         <el-table-column label="状态" align="center" prop="status" width="100">
+         <el-table-column label="执行护理计划" align="center" prop="nursingPlanName" :show-overflow-tooltip="true" />
+         <el-table-column label="护理费用（元/月）" align="center" prop="fee" width="150">
             <template #default="scope">
-               <dict-tag :options="nursing_level_status" :value="scope.row.status" />
+               <span>{{ formatPrice(scope.row.fee) }}</span>
             </template>
          </el-table-column>
-         <el-table-column label="护理等级说明" align="center" prop="description" :show-overflow-tooltip="true" />
+         <el-table-column label="状态" align="center" prop="status" width="100">
+            <template #default="scope">
+               <dict-tag :options="levelStatusOptions" :value="scope.row.status" />
+            </template>
+         </el-table-column>
+         <el-table-column label="等级说明" align="center" prop="description" :show-overflow-tooltip="true" />
          <el-table-column label="创建时间" align="center" prop="createTime" width="180">
             <template #default="scope">
                <span>{{ parseTime(scope.row.createTime) }}</span>
@@ -77,8 +57,11 @@
          </el-table-column>
          <el-table-column label="操作" width="180" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['nursing:level:edit']">修改</el-button>
-               <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['nursing:level:remove']">删除</el-button>
+               <el-button link type="primary" @click="handleUpdate(scope.row)" v-hasPermi="['nursing:level:edit']">修改</el-button>
+               <el-button link type="danger" @click="handleDelete(scope.row)" v-hasPermi="['nursing:level:remove']">删除</el-button>
+               <el-button link type="primary" @click="handleStatusChange(scope.row)" v-hasPermi="['nursing:level:edit']">
+                  {{ isEnabled(scope.row.status) ? '禁用' : '启用' }}
+               </el-button>
             </template>
          </el-table-column>
       </el-table>
@@ -93,11 +76,11 @@
 
       <!-- 添加或修改护理等级对话框 -->
       <el-dialog :title="title" v-model="open" width="600px" append-to-body>
-         <el-form ref="levelRef" :model="form" :rules="rules" label-width="100px">
+         <el-form ref="levelRef" :model="form" :rules="rules" label-width="110px">
             <el-form-item label="护理等级名称" prop="name">
                <el-input v-model="form.name" maxlength="50" placeholder="请输入护理等级名称" />
             </el-form-item>
-            <el-form-item label="护理计划" prop="lplanId">
+            <el-form-item label="执行护理计划" prop="lplanId">
                <el-select v-model="form.lplanId" placeholder="请选择护理计划" style="width: 100%">
                   <el-option
                      v-for="item in planOptions"
@@ -107,7 +90,7 @@
                   />
                </el-select>
             </el-form-item>
-            <el-form-item label="护理费用" prop="fee">
+            <el-form-item label="护理费用（元/月）" prop="fee">
                <el-input-number v-model="form.fee" :precision="2" :min="0" controls-position="right" style="width: 100%" />
             </el-form-item>
             <el-form-item label="状态" prop="status">
@@ -119,8 +102,8 @@
                   >{{ dict.label }}</el-radio>
                </el-radio-group>
             </el-form-item>
-            <el-form-item label="护理等级说明" prop="description">
-               <el-input v-model="form.description" type="textarea" :rows="3" maxlength="255" show-word-limit placeholder="请输入护理等级说明" />
+            <el-form-item label="等级说明" prop="description">
+               <el-input v-model="form.description" type="textarea" :rows="3" maxlength="255" show-word-limit placeholder="请输入等级说明" />
             </el-form-item>
          </el-form>
          <template #footer>
@@ -134,7 +117,7 @@
 </template>
 
 <script setup name="NursingLevel">
-import { listLevel, addLevel, delLevel, getLevel, updateLevel } from "@/api/serve/level"
+import { listLevel, addLevel, delLevel, getLevel, updateLevel, changeLevelStatus } from "@/api/serve/level"
 import { listAllPlan } from "@/api/serve/plan"
 
 const { proxy } = getCurrentInstance()
@@ -145,9 +128,6 @@ const planOptions = ref([])
 const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
-const ids = ref([])
-const single = ref(true)
-const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
 
@@ -168,6 +148,32 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
+/** 状态标签：启用显示绿色、禁用显示红色 */
+const levelStatusOptions = computed(() =>
+  nursing_level_status.value.map(item => ({
+    ...item,
+    elTagType: String(item.value) === "1" ? "success" : "danger"
+  }))
+)
+
+/** 序号跨页连续 */
+function indexMethod(index) {
+  return (queryParams.value.pageNum - 1) * queryParams.value.pageSize + index + 1
+}
+
+/** 是否启用 */
+function isEnabled(status) {
+  return String(status) === "1"
+}
+
+/** 费用格式化为两位小数 */
+function formatPrice(fee) {
+  if (fee === null || fee === undefined || fee === "") {
+    return "-"
+  }
+  return Number(fee).toFixed(2)
+}
+
 /** 加载护理计划下拉选项 */
 function getPlanOptions() {
   listAllPlan().then(response => {
@@ -181,6 +187,7 @@ function getList() {
   listLevel(queryParams.value).then(response => {
     levelList.value = response.rows
     total.value = response.total
+  }).finally(() => {
     loading.value = false
   })
 }
@@ -216,13 +223,6 @@ function resetQuery() {
   handleQuery()
 }
 
-/** 多选框选中数据 */
-function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.id)
-  single.value = selection.length != 1
-  multiple.value = !selection.length
-}
-
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
@@ -233,8 +233,7 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
-  const id = row.id || ids.value
-  getLevel(id).then(response => {
+  getLevel(row.id).then(response => {
     // 后端 status 为数字，字典值为字符串，统一转成字符串以便单选按钮正确回显
     form.value = { ...response.data, status: String(response.data.status) }
     open.value = true
@@ -263,11 +262,22 @@ function submitForm() {
   })
 }
 
+/** 启用/禁用 */
+function handleStatusChange(row) {
+  const enabled = isEnabled(row.status)
+  const text = enabled ? "禁用" : "启用"
+  proxy.$modal.confirm(`确认要${text}"${row.name}"护理等级吗？`).then(function() {
+    return changeLevelStatus(row.id, enabled ? 0 : 1)
+  }).then(() => {
+    proxy.$modal.msgSuccess(text + "成功")
+    getList()
+  }).catch(() => {})
+}
+
 /** 删除按钮操作 */
 function handleDelete(row) {
-  const delIds = row.id ? [row.id] : ids.value
-  proxy.$modal.confirm('是否确认删除护理等级编号为"' + delIds + '"的数据项？').then(function() {
-    return Promise.all(delIds.map(id => delLevel(id)))
+  proxy.$modal.confirm(`是否确认删除护理等级"${row.name}"？`).then(function() {
+    return delLevel(row.id)
   }).then(() => {
     getList()
     proxy.$modal.msgSuccess("删除成功")
@@ -277,3 +287,13 @@ function handleDelete(row) {
 getPlanOptions()
 getList()
 </script>
+
+<style scoped>
+.table-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+</style>
