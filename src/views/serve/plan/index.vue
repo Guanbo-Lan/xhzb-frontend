@@ -185,8 +185,8 @@
 </template>
 
 <script setup name="NursingPlan">
-import { listPlan, addPlan, delPlan, getPlan, updatePlan, changePlanStatus } from "@/api/serve/plan"
-import { listAllProject } from "@/api/serve/project"
+import { listPlan, addPlan, delPlan, getPlan, updatePlan, changePlanStatus } from "@/api/nursing/plan"
+import { listAllProject } from "@/api/nursing/project"
 
 const { proxy } = getCurrentInstance()
 const { nursing_plan_status, nursing_execute_cycle } = useDict("nursing_plan_status", "nursing_execute_cycle")

@@ -122,7 +122,7 @@
 </template>
 
 <script setup name="NursingProject">
-import { listProject, addProject, delProject, getProject, updateProject, changeProjectStatus } from "@/api/serve/project"
+import { listProject, addProject, delProject, getProject, updateProject, changeProjectStatus } from "@/api/nursing/project"
 
 const { proxy } = getCurrentInstance()
 const { nursing_project_status } = useDict("nursing_project_status")

@@ -117,8 +117,8 @@
 </template>
 
 <script setup name="NursingLevel">
-import { listLevel, addLevel, delLevel, getLevel, updateLevel, changeLevelStatus } from "@/api/serve/level"
-import { listAllPlan } from "@/api/serve/plan"
+import { listLevel, addLevel, delLevel, getLevel, updateLevel, changeLevelStatus } from "@/api/nursing/level"
+import { listAllPlan } from "@/api/nursing/plan"
 
 const { proxy } = getCurrentInstance()
 const { nursing_level_status } = useDict("nursing_level_status")

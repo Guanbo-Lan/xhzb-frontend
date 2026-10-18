@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 查询护理项目列表
+// 分页条件查询护理项目列表
 export function listProject(query) {
   return request({
     url: '/nursing/project/list',
@@ -9,7 +9,15 @@ export function listProject(query) {
   })
 }
 
-// 查询护理项目详细
+// 查询所有护理项目（下拉选项）
+export function listAllProject() {
+  return request({
+    url: '/nursing/project/all',
+    method: 'get'
+  })
+}
+
+// 根据id查询护理项目
 export function getProject(id) {
   return request({
     url: '/nursing/project/' + id,
@@ -35,10 +43,20 @@ export function updateProject(data) {
   })
 }
 
-// 删除护理项目
-export function delProject(id) {
+// 修改护理项目状态（启用/禁用）
+export function changeProjectStatus(id, status) {
   return request({
-    url: '/nursing/project/' + id,
+    url: '/nursing/project/changeStatus',
+    method: 'put',
+    data: { id, status }
+  })
+}
+
+// 删除护理项目（支持单个ID或ID数组）
+export function delProject(id) {
+  const ids = Array.isArray(id) ? id.join(',') : id
+  return request({
+    url: '/nursing/project/' + ids,
     method: 'delete'
   })
 }
